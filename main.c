@@ -10,50 +10,16 @@
 #include <sndfile.h>
 //#include <curl/curl.h>
 
+#include "call_OS.h"
+#include "audio.h"
+#include "renderer.h"
+
 #ifdef _WIN32
     #define popen _popen
     #define pclose _pclose
 #endif
 
 #define MAX_MUS_CHARGER 1024
-
-int ouvrirBoiteFichier(char *chemin, DWORD taille){
-    OPENFILENAME ofn;
-
-    ZeroMemory(&ofn, sizeof(ofn));
-    ZeroMemory(chemin, taille);
-
-    chemin[0] = '\0';   // très important
-
-    ofn.lStructSize = sizeof(ofn);
-    ofn.hwndOwner = GetForegroundWindow();   // évite ouverture derrière
-    ofn.lpstrFile = chemin;
-    ofn.nMaxFile = taille;
-
-    ofn.lpstrFilter =
-        "Audio (*.mp3;*.ogg;*.flac;*.wav;*.aiff;*.aif)\0*.mp3;*.ogg;*.flac;*.wav;*.aiff;*.aif\0"
-        "Tous les fichiers (*.*)\0*.*\0";
-
-    ofn.lpstrInitialDir = "C:\\";   // <-- stabilise la boîte
-    ofn.lpstrTitle = "Selectionne un fichier audio";
-
-    ofn.Flags =
-        OFN_EXPLORER |
-        OFN_PATHMUSTEXIST |
-        OFN_FILEMUSTEXIST |
-        OFN_NOCHANGEDIR |
-        OFN_ALLOWMULTISELECT;
-
-    if (GetOpenFileName(&ofn))
-        return 1;
-
-    // pour savoir si c'est une vraie erreur :
-    DWORD err = CommDlgExtendedError();
-    if(err != 0)
-        printf("Erreur Win32: %lu\n", err);
-
-    return 0;
-}
 
 int initialisation(SDL_Window **fenetre, SDL_Renderer **rendu) {
     if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO) != 0) {
@@ -74,136 +40,11 @@ int initialisation(SDL_Window **fenetre, SDL_Renderer **rendu) {
     Mix_Init(MIX_INIT_MP3 | MIX_INIT_OGG);
 
     *fenetre = SDL_CreateWindow("lecteur mp3", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1920, 1080, SDL_WINDOW_FULLSCREEN_DESKTOP);
+    SDL_SetWindowPosition(*fenetre, 0, 10);
 
     *rendu = SDL_CreateRenderer(*fenetre, -1, SDL_RENDERER_ACCELERATED);
 
     SDL_RenderSetLogicalSize(*rendu, 1920, 1080);
-    return 0;
-}
-
-void decharger_audio(Mix_Music **audio){
-    if(*audio){
-        if(Mix_PlayingMusic()){
-            Mix_HaltMusic();
-        }
-        if(audio)
-            Mix_FreeMusic(*audio);
-        *audio = NULL;
-    }
-}
-
-double duree_mus(char *chemin_audio){
-    SF_INFO info;
-    SNDFILE *file = sf_open(chemin_audio, SFM_READ, &info);
-
-    if (!file) return 0.0;
-
-    double duree = (double)info.frames / info.samplerate;
-
-    sf_close(file);
-    return duree;
-}
-
-int charger_audio(Mix_Music **audio, char *chemin_audio, double *duree){
-    FILE *file = fopen(chemin_audio, "rb");
-    if (!file) {
-        printf("fopen failed\n");
-        return 1;
-    }
-
-    SDL_RWops *rw = SDL_RWFromFP(file, 1);
-    if (!rw) {
-        printf("Erreur SDL_RWFromFile: %s\n", SDL_GetError());
-        return 1;
-    }
-
-    decharger_audio(&audio[0]);
-    if(!audio[0]){
-        audio[0] = Mix_LoadMUS_RW(rw, 1);
-        if(audio[0] == NULL){
-            printf("Erreur Mix_LoadMUS_RW : %s\n", SDL_GetError());
-            return 1;
-        }
-        *duree = duree_mus(chemin_audio);
-    }
-    else{
-        return 1;
-    }
-    return 0;
-}
-
-/*double duree_mus(char *chemin_audio){
-    FILE *fip;
-    char cmd[MAX_PATH + 66];
-    char buf[128];
-    double duree = 0.0;
-
-    snprintf(cmd, sizeof(cmd),
-        "ffprobe -v error -show_entries format=duration "
-        "-of default=noprint_wrappers=1:nokey=1 \"%s\"",
-        chemin_audio);
-
-    fip = popen(cmd, "r");
-    if (!fip) return 0.0;
-
-    if (fgets(buf, sizeof(buf), fip)) {
-        printf("DEBUG RAW: %s\n", buf); // <-- IMPORTANT
-        duree = strtod(buf, NULL);
-    }
-
-    pclose(fip);
-    return duree;
-}*/
-
-int charger_audios(char *chemin_audio, char audios_charger[MAX_MUS_CHARGER][MAX_PATH]){
-    char *p = chemin_audio;
-
-    // premier élément = dossier
-    char dossier[MAX_PATH];
-    strcpy(dossier, p);
-
-    p += strlen(p) + 1;
-
-    // s'il n'y a qu'un seul fichier
-    if (*p == '\0') {
-
-        for(int i = 0; i < MAX_MUS_CHARGER; i++){
-            audios_charger[i][0] = '\0';
-        }
-
-        strcpy(audios_charger[0], chemin_audio);
-        return 1;
-
-    } else {
-
-        for(int i = 0; i < MAX_MUS_CHARGER; i++){
-            audios_charger[i][0] = '\0';
-        }
-
-        // plusieurs fichiers
-        char buf[MAX_PATH];
-        int j = 0;
-        for(int i = 0; *p; i++) {
-            sprintf(buf, "%s\\%s", dossier, p);
-            strcpy(audios_charger[i], buf);
-            p += strlen(p) + 1;
-            j = i;
-        }
-        return j;
-    }
-    return 0;
-}
-
-int lancer_recommencer_audio(Mix_Music **audio){
-    if(*audio){
-        Mix_HaltMusic();
-        if(Mix_PlayMusic(*audio, 1) < 0)
-            printf("Erreur lecture : %s\n", Mix_GetError());
-    }
-    else{
-        return 1;
-    }
-    printf("titre : %s\nartiste : %s\nalbum : %s\n", Mix_GetMusicTitle(*audio), Mix_GetMusicArtistTag(*audio), Mix_GetMusicAlbumTag(*audio));
     return 0;
 }
 
@@ -219,33 +60,6 @@ void mise_a_l_arret (SDL_Window *fenetre, SDL_Renderer *rendu, Mix_Music *audio)
     SDL_DestroyRenderer(rendu);
     SDL_DestroyWindow(fenetre);
     SDL_Quit();
-}
-
-void pause(){
-    Mix_PauseMusic();
-}
-
-void reprendre(){
-    Mix_ResumeMusic();
-}
-
-SDL_Texture* loadImage(const char *chemin, SDL_Renderer **rendu){
-    SDL_Surface *img = IMG_Load(chemin);
-    if(img == NULL){
-        printf("IMG_Load erreur : %s\n", IMG_GetError());
-        printf("chemin : %s\n", chemin);
-        system("pause");
-        exit(1);
-    }
-    SDL_Texture *sprite = SDL_CreateTextureFromSurface(*rendu, img);
-    if(sprite == NULL) exit(2);
-    SDL_FreeSurface(img);
-    return sprite;
-}
-
-void afficherSpriteSheet(SDL_Texture *text, int w, int h, int frame, SDL_Renderer **rendu, SDL_Rect emplacement){
-    SDL_Rect src = {w * frame, 0, w, h};
-    SDL_RenderCopy(*rendu, text, &src, &emplacement);
 }
 
 SDL_bool clickInRect(SDL_Rect rect, float coef){

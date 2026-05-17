@@ -26,7 +26,6 @@
 					<Add library="comdlg32" />
 					<Add library="sndfile" />
 					<Add library="SDL2" />
-					<Add library="curl" />
 					<Add directory="D:/tout_pour_programmer/C/bibliotheque/classique/SDL2_mixer/lib" />
 					<Add directory="D:/tout_pour_programmer/C/bibliotheque/classique/SDL2-2.32.8/i686-w64-mingw32/lib" />
 					<Add directory="D:/tout_pour_programmer/C/bibliotheque/classique/SDL2_image-devel-2.8.8-mingw/SDL2_image-2.8.8/i686-w64-mingw32/lib" />
@@ -51,9 +50,6 @@
 			<Add option="-Wall" />
 		</Compiler>
 		<Unit filename="main.c">
-			<Option compilerVar="CC" />
-		</Unit>
-		<Unit filename="view.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="view.h" />

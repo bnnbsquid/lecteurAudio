@@ -1,4 +1,6 @@
-bin/lecteurAudio/
+#Fichiers compilé
+bin/
+obj/
 
 # Archives
 *.zip
