@@ -49,8 +49,26 @@
 		<Compiler>
 			<Add option="-Wall" />
 		</Compiler>
+		<Unit filename="audio.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="audio.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="call_OS.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="call_OS.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
 		<Unit filename="main.c">
 			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="renderer.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="renderer.h">
+			<Option target="&lt;{~None~}&gt;" />
 		</Unit>
 		<Unit filename="view.h" />
 		<Extensions />
