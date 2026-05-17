@@ -1,0 +1,15 @@
+bin/lecteurAudio/
+
+# Archives
+*.zip
+
+# Fichiers Code::Blocks
+*.depend
+*.layout
+
+# Fichiers Visual Studio
+.vs/
+*.suo
+
+# Fichiers temporaires
+*.tmp

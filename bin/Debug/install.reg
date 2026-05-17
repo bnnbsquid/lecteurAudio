@@ -1,0 +1,16 @@
+Windows Registry Editor Version 5.00
+
+[HKEY_CLASSES_ROOT\Applications\MonLecteur.exe]
+"FriendlyAppName"="Lecteur Audio bnnbstudio"
+
+[HKEY_CLASSES_ROOT\Applications\MonLecteur.exe\shell\open\command]
+@="\"C:\\Program Files\\lecteur_audio\\lecteur_audio.exe\" \"%1\""
+
+[HKEY_CLASSES_ROOT\Applications\audio.exe\SupportedTypes]
+".mp3"=""
+".wav"=""
+".flac"=""
+".ogg"=""
+".aac"=""
+".m4a"=""
+".aiff"=""

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="lecteur_audio" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/lecteur_audio" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+					<Add directory="D:/tout_pour_programmer/C/bibliotheque/classique/SDL2-2.32.8/i686-w64-mingw32/include" />
+					<Add directory="D:/tout_pour_programmer/C/bibliotheque/classique/SDL2_mixer/include" />
+					<Add directory="D:/tout_pour_programmer/C/bibliotheque/classique/SDL2_image-devel-2.8.8-mingw/SDL2_image-2.8.8/i686-w64-mingw32/include" />
+					<Add directory="D:/tout_pour_programmer/C/bibliotheque/classique/libsndfile-1.2.2-win32/include" />
+					<Add directory="D:/tout_pour_programmer/C/bibliotheque/classique/libcurl-8.20.0-vs16-x86/include" />
+				</Compiler>
+				<Linker>
+					<Add library="SDL2main" />
+					<Add library="SDL2_mixer" />
+					<Add library="SDL2_image" />
+					<Add library="comdlg32" />
+					<Add library="sndfile" />
+					<Add library="SDL2" />
+					<Add library="curl" />
+					<Add directory="D:/tout_pour_programmer/C/bibliotheque/classique/SDL2_mixer/lib" />
+					<Add directory="D:/tout_pour_programmer/C/bibliotheque/classique/SDL2-2.32.8/i686-w64-mingw32/lib" />
+					<Add directory="D:/tout_pour_programmer/C/bibliotheque/classique/SDL2_image-devel-2.8.8-mingw/SDL2_image-2.8.8/i686-w64-mingw32/lib" />
+					<Add directory="D:/tout_pour_programmer/C/bibliotheque/classique/libsndfile-1.2.2-win32/lib" />
+					<Add directory="D:/tout_pour_programmer/C/bibliotheque/classique/libcurl-8.20.0-vs16-x86/lib" />
+				</Linker>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/lecteur_audio" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+		</Compiler>
+		<Unit filename="main.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="view.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="view.h" />
+		<Extensions />
+	</Project>
+</CodeBlocks_project_file>
