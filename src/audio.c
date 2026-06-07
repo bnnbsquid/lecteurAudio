@@ -1,10 +1,13 @@
 #define SDL_MAIN_HANDLED
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_mixer.h>
 #include <sndfile.h>
-#include <windows.h>
+#ifdef _WIN32
+    #include <windows.h>
+#endif
 
 #include "audio.h"
 
@@ -84,43 +87,31 @@ int charger_audio(Mix_Music **audio, char *chemin_audio, double *duree){
     return duree;
 }*/
 
-int charger_audios(char *chemin_audio, char audios_charger[MAX_MUS_CHARGER][MAX_PATH]){
-    char *p = chemin_audio;
+int charger_audios(const char *chemin_audio,
+                   char audios_charger[MAX_MUS_CHARGER][MAX_PATH])
+{
+    char buffer[16384];
 
-    // premier élément = dossier
-    char dossier[MAX_PATH];
-    strcpy(dossier, p);
+    strncpy(buffer, chemin_audio, sizeof(buffer) - 1);
+    buffer[sizeof(buffer) - 1] = '\0';
 
-    p += strlen(p) + 1;
-
-    // s'il n'y a qu'un seul fichier
-    if (*p == '\0') {
-
-        for(int i = 0; i < MAX_MUS_CHARGER; i++){
-            audios_charger[i][0] = '\0';
-        }
-
-        strcpy(audios_charger[0], chemin_audio);
-        return 1;
-
-    } else {
-
-        for(int i = 0; i < MAX_MUS_CHARGER; i++){
-            audios_charger[i][0] = '\0';
-        }
-
-        // plusieurs fichiers
-        char buf[MAX_PATH];
-        int j = 0;
-        for(int i = 0; *p; i++) {
-            sprintf(buf, "%s\\%s", dossier, p);
-            strcpy(audios_charger[i], buf);
-            p += strlen(p) + 1;
-            j = i;
-        }
-        return j;
+    for (int i = 0; i < MAX_MUS_CHARGER; i++) {
+        audios_charger[i][0] = '\0';
     }
-    return 0;
+
+    int nb = 0;
+    char *token = strtok(buffer, "|");
+
+    while (token && nb < MAX_MUS_CHARGER)
+    {
+        strncpy(audios_charger[nb], token, MAX_PATH - 1);
+        audios_charger[nb][MAX_PATH - 1] = '\0';
+        nb++;
+
+        token = strtok(NULL, "|");
+    }
+
+    return nb;
 }
 
 int lancer_recommencer_audio(Mix_Music **audio){

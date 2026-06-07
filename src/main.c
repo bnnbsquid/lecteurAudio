@@ -1,13 +1,18 @@
+#include <SDL2/SDL_render.h>
+#include <SDL2/SDL_surface.h>
 #define SDL_MAIN_HANDLED
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <string.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_mixer.h>
 #include <SDL2/SDL_image.h>
-#include <windows.h>
-#include <commdlg.h>
+#ifdef _WIN32
+    #include <windows.h>
+    #include <commdlg.h>
+#endif
 #include <sndfile.h>
 //#include <curl/curl.h>
 
@@ -21,6 +26,10 @@
 #endif
 
 #define MAX_MUS_CHARGER 1024
+
+#ifndef MAX_PATH
+    #define MAX_PATH 4096
+#endif
 
 int initialisation(SDL_Window **fenetre, SDL_Renderer **rendu) {
     if (SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO) != 0) {
@@ -71,6 +80,16 @@ SDL_bool clickInRect(SDL_Rect rect, float coef){
     return SDL_FALSE;
 }
 
+int souris_in_rect(SDL_Rect rect){
+    int x = 0, y = 0;
+
+    SDL_GetMouseState(&x, &y);
+
+    if(x > rect.x && x < rect.x + rect.w && y > rect.y && y < rect.y + rect.h)
+        return 1;
+    return 0;
+}
+
 int main(int argc, char *argv[])
 {
     SDL_Window *fenetre = NULL;
@@ -79,8 +98,12 @@ int main(int argc, char *argv[])
 
     SDL_Rect rectEcran = {0, 0, 1920, 1080};
     SDL_Rect rectPlay = {935, 1000, 50, 50}, rectSautAvant = {850, 1000, 50, 50}, rectSautApres = {1020, 1000, 50, 50}, rectRandom = {1110, 1000, 50, 50};
-    SDL_Rect rectBarreAudio = {40, 900, 0, 5};
+    SDL_Rect rectBarreAudio = {40, 900, 0, 5}, rectPoint = {40, 0, 15, 15};
+    rectPoint.y = 902 - rectPoint.h / 2;
     SDL_Rect rectCharger = {5, 15, 136, 20};
+    SDL_Rect rectCroix = {1866, 15, 39, 41};
+
+    bool changementTime = false;
 
     if(initialisation(&fenetre, &rendu)){
         return 1;
@@ -102,6 +125,8 @@ int main(int argc, char *argv[])
     SDL_Texture *playButton = loadImage("./ressources/boutons.png", &rendu);
     SDL_Texture *chargerButton = loadImage("./ressources/charger.png", &rendu);
     SDL_Texture *randomBouton = loadImage("./ressources/random.png", &rendu);
+    SDL_Texture *point = loadImage("./ressources/point.png", &rendu);
+    SDL_Texture *quit = loadImage("./ressources/quit.png", &rendu);
 
     Mix_Music *audio = NULL;
 
@@ -110,6 +135,7 @@ int main(int argc, char *argv[])
     int musiqueAJouer = 0;
     int nbMusCharg = 0;
     double duree = 0.0;
+    double pos = 0.0;
     char chemin_audios_charger[MAX_MUS_CHARGER][MAX_PATH];
 
     if(argc > 1){
@@ -205,6 +231,14 @@ int main(int argc, char *argv[])
                         }
                     }
                 }
+
+                if(clickInRect(rectBarreAudio, coefEcran)){
+                    changementTime = true;
+                }
+
+                if(clickInRect(rectCroix, coefEcran)){
+                    boucle = SDL_FALSE;
+                }
             }
 
             if(event.key.type == SDL_KEYDOWN){
@@ -233,18 +267,41 @@ int main(int argc, char *argv[])
             //if(event.window.)
         }
 
+        int x = 0;
+        Uint32 mouseState = SDL_GetMouseState(&x, NULL);
+
+        printf("%d\n", x);
+        if (mouseState & SDL_BUTTON(SDL_BUTTON_LEFT))
+        {
+            if(changementTime){
+                rectBarreAudio.w = x - rectBarreAudio.x;
+                rectPoint.x = x - rectPoint.w / 2;
+            }
+            else{
+                MAJBarreAndPoint(&rectPoint, &rectBarreAudio, Mix_GetMusicPosition(audio), duree, etatMusic);
+            }
+        }
+        else{
+            if(changementTime){
+                changementTime = false;
+
+                if(x < rectBarreAudio.x)
+                    Mix_SetMusicPosition(0.0);
+                else if(x > rectBarreAudio.x  + rectBarreAudio.w)
+                    Mix_SetMusicPosition(duree);
+                else
+                    Mix_SetMusicPosition((x - rectBarreAudio.x) * duree  / 1839);
+            }
+
+            MAJBarreAndPoint(&rectPoint, &rectBarreAudio, Mix_GetMusicPosition(audio), duree, etatMusic);
+        }
+
+
         /*if(!Mix_PlayingMusic()){
             etatBoutonPlay = 3;
             etatMusic = 0;
         }*/
 
-        double pos = Mix_GetMusicPosition(audio);
-        if(pos > 0.0f && pos < duree && etatMusic != 0)
-            rectBarreAudio.w = pos * (1839 / duree);
-        else if(pos > duree && etatMusic != 0)
-            rectBarreAudio.w = duree * (1839 / duree);
-        else
-            rectBarreAudio.w = 0;
 
         if(pos + 0.001f >= duree){
             printf("fin\n");
@@ -264,6 +321,13 @@ int main(int argc, char *argv[])
             }
         }
 
+        if(souris_in_rect(rectCroix)){
+            afficherSpriteSheet(quit, 39, 41, 1, &rendu, rectCroix);
+        }
+        else {
+            afficherSpriteSheet(quit, 39, 41, 0, &rendu, rectCroix);
+        }
+
         SDL_SetRenderDrawColor(rendu, 0, 0, 0, 255);
         SDL_RenderFillRect(rendu, &rectBarreAudio);
 
@@ -273,9 +337,10 @@ int main(int argc, char *argv[])
         afficherSpriteSheet(playButton, 50, 50, etatBoutonPlay, &rendu, rectPlay);
         afficherSpriteSheet(chargerButton, 136, 20, 0, &rendu, rectCharger);
         afficherSpriteSheet(randomBouton, 50, 50, 0, &rendu, rectRandom);
+        afficherSpriteSheetEx(point, 69, 69, 0, &rendu, rectPoint, 45.0, NULL, SDL_FLIP_NONE);
         SDL_RenderPresent(rendu);
         SDL_RenderClear(rendu);
-        SDL_Delay(25);
+        SDL_Delay(5);
     }
 
     SDL_DestroyTexture(playButton);

@@ -1,0 +1,3 @@
+/run/media/bnnbsquid/SSD1Tultrarapide5èmegeneration😎/tout_pour_programmer/C/programme/actuel/lecteur_audio/build/CMakeFiles/LecteurAudio.dir
+/run/media/bnnbsquid/SSD1Tultrarapide5èmegeneration😎/tout_pour_programmer/C/programme/actuel/lecteur_audio/build/CMakeFiles/edit_cache.dir
+/run/media/bnnbsquid/SSD1Tultrarapide5èmegeneration😎/tout_pour_programmer/C/programme/actuel/lecteur_audio/build/CMakeFiles/rebuild_cache.dir

@@ -1,6 +1,6 @@
-#ifndef CALL_OS_H_INCLUDED
-#define CALL_OS_H_INCLUDED
+#ifndef CALL_OS_H
+#define CALL_OS_H
 
-int ouvrirBoiteFichier(char *chemin, DWORD taille);
+int ouvrirBoiteFichier(char *chemin, unsigned int taille);
 
-#endif // CALL_OS_H_INCLUDED
+#endif

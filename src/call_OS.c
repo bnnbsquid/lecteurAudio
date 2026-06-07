@@ -1,42 +1,53 @@
-#include <windows.h>
-#include <stdio.h>
-
 #include "call_OS.h"
 
-int ouvrirBoiteFichier(char *chemin, DWORD taille){
-    OPENFILENAME ofn;
+#ifdef _WIN32
 
-    ZeroMemory(&ofn, sizeof(ofn));
-    ZeroMemory(chemin, taille);
+// code Win32 actuel
 
-    chemin[0] = '\0';   // très important
+#else
 
-    ofn.lStructSize = sizeof(ofn);
-    ofn.hwndOwner = GetForegroundWindow();   // évite ouverture derrière
-    ofn.lpstrFile = chemin;
-    ofn.nMaxFile = taille;
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-    ofn.lpstrFilter =
-        "Audio (*.mp3;*.ogg;*.flac;*.wav;*.aiff;*.aif)\0*.mp3;*.ogg;*.flac;*.wav;*.aiff;*.aif\0"
-        "Tous les fichiers (*.*)\0*.*\0";
+int ouvrirBoiteFichier(char *chemin, unsigned int taille)
+{
+    FILE *fp;
 
-    ofn.lpstrInitialDir = "C:\\";   // <-- stabilise la boîte
-    ofn.lpstrTitle = "Selectionne un fichier audio";
+    chemin[0] = '\0';
 
-    ofn.Flags =
-        OFN_EXPLORER |
-        OFN_PATHMUSTEXIST |
-        OFN_FILEMUSTEXIST |
-        OFN_NOCHANGEDIR |
-        OFN_ALLOWMULTISELECT;
+    fp = popen(
+        "zenity --file-selection "
+        "--multiple "
+        "--separator='|' "
+        "--title='Selectionne un fichier audio' "
+        "--file-filter='*.mp3 *.ogg *.flac *.wav *.aiff *.aif'",
+        "r"
+    );
 
-    if (GetOpenFileName(&ofn))
-        return 1;
+    if (!fp)
+        return 0;
 
-    // pour savoir si c'est une vraie erreur :
-    DWORD err = CommDlgExtendedError();
-    if(err != 0)
-        printf("Erreur Win32: %lu\n", err);
+    if (!fgets(chemin, taille, fp))
+    {
+        pclose(fp);
+        return 0;
+    }
 
-    return 0;
+    pclose(fp);
+
+    chemin[strcspn(chemin, "\n")] = 0;
+
+
+    #ifdef __linux__
+    for (char *p = chemin; *p; p++)
+    {
+        if (*p == '|')
+            *p = '\0';
+    }
+    #endif
+
+    return 1;
 }
+
+#endif
