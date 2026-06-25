@@ -27,6 +27,11 @@
 
 #define MAX_MUS_CHARGER 1024
 
+#define Y_BARRE_AUDIO 900 //900
+#define X_BARRE_AUDIO 40 //40
+#define SIZE_BARE_AUDIO 1839 //1839
+#define H_BARRE_AUDIO 5 //5
+
 #ifndef MAX_PATH
     #define MAX_PATH 4096
 #endif
@@ -72,22 +77,12 @@ void mise_a_l_arret (SDL_Window *fenetre, SDL_Renderer *rendu, Mix_Music *audio)
     SDL_Quit();
 }
 
-SDL_bool clickInRect(SDL_Rect rect, float coef){
+SDL_bool souris_in_rect(SDL_Rect rect, float coef){
     int x, y;
     SDL_GetMouseState(&x, &y);
     if(x * coef > rect.x && x * coef < rect.x + rect.w && y * coef > rect.y && y * coef < rect.y + rect.h)
         return SDL_TRUE;
     return SDL_FALSE;
-}
-
-int souris_in_rect(SDL_Rect rect){
-    int x = 0, y = 0;
-
-    SDL_GetMouseState(&x, &y);
-
-    if(x > rect.x && x < rect.x + rect.w && y > rect.y && y < rect.y + rect.h)
-        return 1;
-    return 0;
 }
 
 int main(int argc, char *argv[])
@@ -98,12 +93,19 @@ int main(int argc, char *argv[])
 
     SDL_Rect rectEcran = {0, 0, 1920, 1080};
     SDL_Rect rectPlay = {935, 1000, 50, 50}, rectSautAvant = {850, 1000, 50, 50}, rectSautApres = {1020, 1000, 50, 50}, rectRandom = {1110, 1000, 50, 50};
-    SDL_Rect rectBarreAudio = {40, 900, 0, 5}, rectPoint = {40, 0, 15, 15};
-    rectPoint.y = 902 - rectPoint.h / 2;
+    SDL_Rect rectBarreAudio = {X_BARRE_AUDIO, Y_BARRE_AUDIO, 0, H_BARRE_AUDIO}, rectPoint = {X_BARRE_AUDIO, Y_BARRE_AUDIO, 15, 15};
+    SDL_Rect rectBarreAudioFix = rectBarreAudio;
+    rectBarreAudioFix.w = SIZE_BARE_AUDIO;
+    SDL_Rect rectBarreAudioLarge = rectBarreAudio;
+    rectBarreAudioLarge.y -= (rectPoint.h / 2 - rectBarreAudio.h /2);
+    rectBarreAudioLarge.h = rectPoint.h;
+    rectBarreAudioLarge.w = SIZE_BARE_AUDIO;
+    rectPoint.y = Y_BARRE_AUDIO - rectPoint.h / 2 + H_BARRE_AUDIO / 2;
     SDL_Rect rectCharger = {5, 15, 136, 20};
     SDL_Rect rectCroix = {1866, 15, 39, 41};
 
     bool changementTime = false;
+    bool btnLancer = false;
 
     if(initialisation(&fenetre, &rendu)){
         return 1;
@@ -114,10 +116,10 @@ int main(int argc, char *argv[])
     float rapport_x = 1920.0 / w;
     float rapport_y = 1080.0 / h;
 
-    SDL_bool boucle = SDL_TRUE, click = SDL_FALSE;
+    SDL_bool boucle = SDL_TRUE;
 
     if(rapport_x != rapport_y){
-        printf("votre ecran n est pas compatible avec ce jeu .Preferer une resolution 16 : 9 \n");
+        printf("votre ecran n est pas compatible avec cette app .Preferer une resolution 16 : 9 \n");
         boucle = SDL_FALSE;
     }
     float coefEcran = rapport_x;
@@ -127,15 +129,16 @@ int main(int argc, char *argv[])
     SDL_Texture *randomBouton = loadImage("./ressources/random.png", &rendu);
     SDL_Texture *point = loadImage("./ressources/point.png", &rendu);
     SDL_Texture *quit = loadImage("./ressources/quit.png", &rendu);
+    SDL_Texture *coteBarreAudio = loadImage("./ressources/cote.png", &rendu);
 
     Mix_Music *audio = NULL;
 
-    int etatMusic = 0;
-    int etatBoutonPlay = 3;
+    bool lancer = false;
+    bool pause = false;
+    bool sourisOnQuit = false;
     int musiqueAJouer = 0;
     int nbMusCharg = 0;
     double duree = 0.0;
-    double pos = 0.0;
     char chemin_audios_charger[MAX_MUS_CHARGER][MAX_PATH];
 
     if(argc > 1){
@@ -143,123 +146,95 @@ int main(int argc, char *argv[])
         strcpy(chemin_audios_charger[0], argv[1]);
         musiqueAJouer = 0;
 
-        if(!charger_audio(&audio, chemin_audios_charger[0], &duree)) {
-            lancer_recommencer_audio(&audio);
-            etatMusic = 1;
-            etatBoutonPlay = 2;
-        }
+        if(!charger_audio(&audio, chemin_audios_charger[0], &duree))
+            lancer_recommencer_audio(&audio, &lancer, &pause);
     }
 
     while(boucle){
-        click = SDL_FALSE;
         while(SDL_PollEvent(&event)){
             if(event.type == SDL_QUIT)
                 boucle = SDL_FALSE;
 
             if(event.button.button == SDL_BUTTON_LEFT && event.type == SDL_MOUSEBUTTONDOWN){
-                click = SDL_TRUE;
 
-                if(clickInRect(rectCharger, coefEcran)){
+                if(souris_in_rect(rectCharger, coefEcran)){
                     char chemin_audio[16384];
                     if(ouvrirBoiteFichier(chemin_audio, 16384) != 0){
                         nbMusCharg = charger_audios(chemin_audio, chemin_audios_charger);
                         musiqueAJouer = 0;
-                        etatMusic = 0;
-                        etatBoutonPlay = 3;
-                        printf("%f\n", Mix_GetMusicPosition(audio));
-                        pause();
+                        lancer = false;
+                        pause = false;
+                        pauseMus();
                     }
                 }
 
-                if(clickInRect(rectPlay, coefEcran)){
-                    if(etatMusic == 0 && nbMusCharg != 0){
-                        if(!charger_audio(&audio, chemin_audios_charger[musiqueAJouer], &duree)){
-                            lancer_recommencer_audio(&audio);
-
-                            etatMusic = 1;
-                            etatBoutonPlay = 2;
-                        }
+                if(souris_in_rect(rectPlay, coefEcran)){
+                    if(lancer == false && nbMusCharg != 0){
+                        if(!charger_audio(&audio, chemin_audios_charger[musiqueAJouer], &duree))
+                            lancer_recommencer_audio(&audio, &lancer, &pause);
                     }
-                    else if(etatMusic == 1){
-                        pause();
-                        etatMusic = 2;
-                        etatBoutonPlay = 3;
+                    else if(lancer == true && pause == false){
+                        pauseMus();
+                        pause = true;
                     }
-                    else if(etatMusic == 2){
+                    else if(pause == true && lancer == true){
                         reprendre();
-                        etatMusic = 1;
-                        etatBoutonPlay = 2;
+                        pause = false;
                     }
                 }
 
-                if(clickInRect(rectSautAvant, coefEcran)){
-                    if(Mix_GetMusicPosition(audio) >= 10){
-                        lancer_recommencer_audio(&audio);
-                        etatMusic = 1;
-                        etatBoutonPlay = 2;
-                    }
+                if(souris_in_rect(rectSautAvant, coefEcran)){
+                    if(Mix_GetMusicPosition(audio) >= 10)
+                        lancer_recommencer_audio(&audio, &lancer, &pause);
                     else{
                         if(musiqueAJouer != 0){
                             musiqueAJouer -= 1;
                             decharger_audio(&audio);
                             if(chemin_audios_charger[musiqueAJouer][0] != '\0'){
-                                if(!charger_audio(&audio, chemin_audios_charger[musiqueAJouer], &duree)){
-                                    lancer_recommencer_audio(&audio);
-                                    etatMusic = 1;
-                                    etatBoutonPlay = 2;
-                                }
+                                if(!charger_audio(&audio, chemin_audios_charger[musiqueAJouer], &duree))
+                                    lancer_recommencer_audio(&audio, &lancer, &pause);
                             }
                         }
-                        else{
-                            lancer_recommencer_audio(&audio);
-                            etatMusic = 1;
-                            etatBoutonPlay = 2;
-                        }
+                        else
+                            lancer_recommencer_audio(&audio, &lancer, &pause);
                     }
                 }
 
-                if(clickInRect(rectSautApres, coefEcran)){
-                    if(musiqueAJouer + 1 < nbMusCharg){
+                if(souris_in_rect(rectSautApres, coefEcran)){
+                    if(musiqueAJouer + 1 <= nbMusCharg){
                         musiqueAJouer += 1;
                         decharger_audio(&audio);
                         if(chemin_audios_charger[musiqueAJouer][0] != '\0'){
-                            if(!charger_audio(&audio, chemin_audios_charger[musiqueAJouer], &duree)){
-                                lancer_recommencer_audio(&audio);
-                                etatMusic = 1;
-                                etatBoutonPlay = 2;
-                            }
+                            if(!charger_audio(&audio, chemin_audios_charger[musiqueAJouer], &duree))
+                                lancer_recommencer_audio(&audio, &lancer, &pause);
                         }
                     }
                 }
 
-                if(clickInRect(rectBarreAudio, coefEcran)){
+                if(souris_in_rect(rectBarreAudioLarge, coefEcran)){
                     changementTime = true;
                 }
 
-                if(clickInRect(rectCroix, coefEcran)){
+                if(souris_in_rect(rectCroix, coefEcran)){
                     boucle = SDL_FALSE;
                 }
             }
 
             if(event.key.type == SDL_KEYDOWN){
                 if(event.key.keysym.sym == SDLK_SPACE){
-                    if(etatMusic == 0 && nbMusCharg != 0){
-                        if(!charger_audio(&audio, chemin_audios_charger[musiqueAJouer], &duree)){
-                            lancer_recommencer_audio(&audio);
-
-                            etatMusic = 1;
-                            etatBoutonPlay = 2;
-                        }
+                    if(lancer == false && nbMusCharg != 0){
+                        if(!charger_audio(&audio, chemin_audios_charger[musiqueAJouer], &duree))
+                            lancer_recommencer_audio(&audio, &lancer, &pause);
                     }
-                    else if(etatMusic == 1){
-                        pause();
-                        etatMusic = 2;
-                        etatBoutonPlay = 3;
+                    else if(lancer == true && pause == false){
+                        pauseMus();
+                        lancer = true;
+                        pause = true;
                     }
-                    else if(etatMusic == 2){
+                    else if(lancer == true && pause == true){
                         reprendre();
-                        etatMusic = 1;
-                        etatBoutonPlay = 2;
+                        lancer = true;
+                        pause = false;
                     }
                 }
             }
@@ -270,15 +245,14 @@ int main(int argc, char *argv[])
         int x = 0;
         Uint32 mouseState = SDL_GetMouseState(&x, NULL);
 
-        printf("%d\n", x);
         if (mouseState & SDL_BUTTON(SDL_BUTTON_LEFT))
         {
             if(changementTime){
-                rectBarreAudio.w = x - rectBarreAudio.x;
-                rectPoint.x = x - rectPoint.w / 2;
+                rectBarreAudio.w = x * coefEcran - rectBarreAudio.x;
+                rectPoint.x = x * coefEcran - rectPoint.w / 2;
             }
             else{
-                MAJBarreAndPoint(&rectPoint, &rectBarreAudio, Mix_GetMusicPosition(audio), duree, etatMusic);
+                MAJBarreAndPoint(&rectPoint, &rectBarreAudio, Mix_GetMusicPosition(audio), duree, lancer, SIZE_BARE_AUDIO);
             }
         }
         else{
@@ -290,10 +264,10 @@ int main(int argc, char *argv[])
                 else if(x > rectBarreAudio.x  + rectBarreAudio.w)
                     Mix_SetMusicPosition(duree);
                 else
-                    Mix_SetMusicPosition((x - rectBarreAudio.x) * duree  / 1839);
+                    Mix_SetMusicPosition((x * coefEcran - rectBarreAudio.x) * duree  / SIZE_BARE_AUDIO);
             }
 
-            MAJBarreAndPoint(&rectPoint, &rectBarreAudio, Mix_GetMusicPosition(audio), duree, etatMusic);
+            MAJBarreAndPoint(&rectPoint, &rectBarreAudio, Mix_GetMusicPosition(audio), duree, lancer, SIZE_BARE_AUDIO);
         }
 
 
@@ -302,49 +276,44 @@ int main(int argc, char *argv[])
             etatMusic = 0;
         }*/
 
-
+        double pos = Mix_GetMusicPosition(audio);
         if(pos + 0.001f >= duree){
-            printf("fin\n");
             decharger_audio(&audio);
-            musiqueAJouer += 1;
+            musiqueAJouer ++;
             if(chemin_audios_charger[musiqueAJouer][0] != '\0'){
-                if(!charger_audio(&audio, chemin_audios_charger[musiqueAJouer], &duree)){
-                    lancer_recommencer_audio(&audio);
-                    etatMusic = 1;
-                    etatBoutonPlay = 2;
-                }
+                if(!charger_audio(&audio, chemin_audios_charger[musiqueAJouer], &duree))
+                    lancer_recommencer_audio(&audio, &lancer, &pause);
             }
             else{
-                etatMusic = 0;
-                etatBoutonPlay = 3;
-                musiqueAJouer -= 1;
+                musiqueAJouer --;
+                lancer = false;
+                pause = false;
             }
         }
 
-        if(souris_in_rect(rectCroix)){
-            afficherSpriteSheet(quit, 39, 41, 1, &rendu, rectCroix);
-        }
-        else {
-            afficherSpriteSheet(quit, 39, 41, 0, &rendu, rectCroix);
-        }
+        if(souris_in_rect(rectCroix, coefEcran))
+            sourisOnQuit = true;
+        else
+            sourisOnQuit = false;
 
-        SDL_SetRenderDrawColor(rendu, 0, 0, 0, 255);
-        SDL_RenderFillRect(rendu, &rectBarreAudio);
+        if(lancer == true && pause == false) btnLancer = false;
+        else btnLancer = true;
 
-        SDL_SetRenderDrawColor(rendu, 255, 255, 255, 255);
-        afficherSpriteSheet(playButton, 50, 50, 1, &rendu, rectSautAvant);
-        afficherSpriteSheet(playButton, 50, 50, 0, &rendu, rectSautApres);
-        afficherSpriteSheet(playButton, 50, 50, etatBoutonPlay, &rendu, rectPlay);
-        afficherSpriteSheet(chargerButton, 136, 20, 0, &rendu, rectCharger);
-        afficherSpriteSheet(randomBouton, 50, 50, 0, &rendu, rectRandom);
-        afficherSpriteSheetEx(point, 69, 69, 0, &rendu, rectPoint, 45.0, NULL, SDL_FLIP_NONE);
-        SDL_RenderPresent(rendu);
-        SDL_RenderClear(rendu);
+
+        renduBoucle(&rendu,
+                    rectCroix, rectBarreAudioFix, rectBarreAudio, rectBarreAudioLarge, rectSautAvant, rectSautApres, rectPlay, rectCharger, rectPoint,
+                    quit, playButton, chargerButton, point,
+                    sourisOnQuit, btnLancer);
+
         SDL_Delay(5);
     }
 
     SDL_DestroyTexture(playButton);
     SDL_DestroyTexture(chargerButton);
+    SDL_DestroyTexture(randomBouton);
+    SDL_DestroyTexture(point);
+    SDL_DestroyTexture(quit);
+    SDL_DestroyTexture(coteBarreAudio);
 
     mise_a_l_arret(fenetre, rendu, audio);
 

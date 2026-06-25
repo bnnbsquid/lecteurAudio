@@ -1,1 +1,0 @@
-/usr/bin/cc -O3 -DNDEBUG -Wl,--dependency-file=CMakeFiles/LecteurAudio.dir/link.d CMakeFiles/LecteurAudio.dir/src/main.c.o CMakeFiles/LecteurAudio.dir/src/audio.c.o CMakeFiles/LecteurAudio.dir/src/renderer.c.o CMakeFiles/LecteurAudio.dir/src/call_OS.c.o -o LecteurAudio  -lSDL2 -lSDL2_image -lSDL2 -lSDL2_mixer -lSDL2 -lsndfile -lSDL2_image -lSDL2_mixer -lsndfile
