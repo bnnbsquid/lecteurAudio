@@ -1,0 +1,3 @@
+/home/bnnbsquid/C/lecteur_audio/build/CMakeFiles/LecteurAudio.dir
+/home/bnnbsquid/C/lecteur_audio/build/CMakeFiles/edit_cache.dir
+/home/bnnbsquid/C/lecteur_audio/build/CMakeFiles/rebuild_cache.dir

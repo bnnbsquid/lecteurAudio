@@ -87,6 +87,7 @@ int charger_audio(Mix_Music **audio, char *chemin_audio, double *duree){
     return duree;
 }*/
 
+<<<<<<< HEAD
 #ifdef _WIN32 // fonction charger_audios fait par IA
 
 int charger_audios(char *chemin_audio, char audios_charger[MAX_MUS_CHARGER][MAX_PATH]){
@@ -225,6 +226,36 @@ int charger_audios(char *chemin_audio, char audios_charger[MAX_MUS_CHARGER][MAX_
 
 
 int lancer_recommencer_audio(Mix_Music **audio, bool *lancer, bool *pause){
+=======
+int charger_audios(const char *chemin_audio,
+                   char audios_charger[MAX_MUS_CHARGER][MAX_PATH])
+{
+    char buffer[16384];
+
+    strncpy(buffer, chemin_audio, sizeof(buffer) - 1);
+    buffer[sizeof(buffer) - 1] = '\0';
+
+    for (int i = 0; i < MAX_MUS_CHARGER; i++) {
+        audios_charger[i][0] = '\0';
+    }
+
+    int nb = 0;
+    char *token = strtok(buffer, "|");
+
+    while (token && nb < MAX_MUS_CHARGER)
+    {
+        strncpy(audios_charger[nb], token, MAX_PATH - 1);
+        audios_charger[nb][MAX_PATH - 1] = '\0';
+        nb++;
+
+        token = strtok(NULL, "|");
+    }
+
+    return nb;
+}
+
+int lancer_recommencer_audio(Mix_Music **audio){
+>>>>>>> c6c158b (Add cross-platform Windows/Linux support in CMakeLists.txt.)
     if(*audio){
         Mix_HaltMusic();
         if(Mix_PlayMusic(*audio, 1) < 0)
@@ -233,14 +264,21 @@ int lancer_recommencer_audio(Mix_Music **audio, bool *lancer, bool *pause){
     else{
         return 1;
     }
+<<<<<<< HEAD
     *lancer = true;
     *pause = false;
+=======
+>>>>>>> c6c158b (Add cross-platform Windows/Linux support in CMakeLists.txt.)
     printf("titre : %s\nartiste : %s\nalbum : %s\n", Mix_GetMusicTitle(*audio), Mix_GetMusicArtistTag(*audio), Mix_GetMusicAlbumTag(*audio));
     return 0;
 }
 
 
+<<<<<<< HEAD
 void pauseMus(){
+=======
+void pause(){
+>>>>>>> c6c158b (Add cross-platform Windows/Linux support in CMakeLists.txt.)
     Mix_PauseMusic();
 }
 

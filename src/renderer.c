@@ -1,4 +1,7 @@
+<<<<<<< HEAD
 #include <stdbool.h>
+=======
+>>>>>>> c6c158b (Add cross-platform Windows/Linux support in CMakeLists.txt.)
 #define SDL_MAIN_HANDLED
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,6 +34,7 @@ void afficherSpriteSheetEx(SDL_Texture *text, int w, int h, int frame, SDL_Rende
     SDL_RenderCopyEx(*rendu, text, &src, &emplacement, angle, center, flip);
 }
 
+<<<<<<< HEAD
 void MAJBarreAndPoint(SDL_Rect *rectPoint, SDL_Rect *rectBarreAudio, const double pos, const double duree, const bool etatMusic, int taille_barre_audio){ // argument pos = Mix_GetMusicPosition(audio);
     rectPoint->x = rectBarreAudio->w + rectBarreAudio->x - rectPoint->w / 2;
 
@@ -64,3 +68,15 @@ void renduBoucle(SDL_Renderer **rendu,
     SDL_RenderPresent(*rendu);
     SDL_RenderClear(*rendu);
 }
+=======
+void MAJBarreAndPoint(SDL_Rect *rectPoint, SDL_Rect *rectBarreAudio, const double pos, const double duree, const int etatMusic){ // argument pos = Mix_GetMusicPosition(audio);
+    rectPoint->x = rectBarreAudio->w + rectBarreAudio->x - rectPoint->w / 2;
+
+    if(pos > 0.0f && pos < duree && etatMusic != 0)
+        rectBarreAudio->w = pos * (1839 / duree);
+    else if(pos > duree && etatMusic != 0)
+        rectBarreAudio->w = duree * (1839 / duree);
+    else
+        rectBarreAudio->w = 0;
+}
+>>>>>>> c6c158b (Add cross-platform Windows/Linux support in CMakeLists.txt.)
